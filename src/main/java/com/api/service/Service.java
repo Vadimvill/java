@@ -2,7 +2,6 @@ package com.api.service;
 
 import com.api.dao.EmailDao;
 import com.api.dao.EmailEntity;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
@@ -16,7 +15,6 @@ import java.util.regex.Pattern;
 @EnableJpaRepositories(basePackages = "com.api.dao")
 @EntityScan("com.api.dao")
 public class Service{
-    @Autowired
     EmailDao emailDao;
 public String getSecureText(String text){
     List<String> list = new ArrayList<>();
