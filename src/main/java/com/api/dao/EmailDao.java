@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 public class EmailDao {
     private final EmailRepository emailRepository;
 
-    @Autowired
+
     public EmailDao(EmailRepository emailRepository) {
         this.emailRepository = emailRepository;
     }
