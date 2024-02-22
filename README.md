@@ -1,3 +1,1 @@
-# java
-# Java 8+
-# Apache Maven
+API for procces data that delete emails and numbers and return JSON
