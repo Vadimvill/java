@@ -175,7 +175,7 @@ public class ProcessService {
 
     @Transactional
     public String getConfidentialText(String text) {
-        try {
+      
             List<String> list = new ArrayList<>();
             String phoneRegex = "\\b(?:\\+\\d{1,3}[-.\\s]?)?(\\d{1,4}[-.\\s]?){1,2}\\d{1,9}\\b";
             Pattern phonePattern = Pattern.compile(phoneRegex);
@@ -219,18 +219,10 @@ public class ProcessService {
 
                 }
             }
-        }
-        catch (DataIntegrityViolationException ex){
-           
-        }
+ 
         return text;
 
     }
-
-
-
-
-
 
 }
 
