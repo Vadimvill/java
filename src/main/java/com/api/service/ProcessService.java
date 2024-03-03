@@ -221,7 +221,7 @@ public class ProcessService {
             }
         }
         catch (DataIntegrityViolationException ex){
-            ex.printStackTrace();
+           
         }
         return text;
 
