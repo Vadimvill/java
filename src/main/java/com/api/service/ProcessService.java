@@ -18,7 +18,7 @@ import java.util.regex.Pattern;
 @Service
 public class ProcessService {
     private final EmailRepository emailRepository;
-    private static final String emailRegex = "\\b[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b";
+    private static final String EMAIL_REGEX_PATTERN = "\\b[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b";
     private static String adresRegex = "@([^.]*)\\.";
     private final EmailIdRepository emailIdRepository;
 
@@ -93,7 +93,7 @@ public class ProcessService {
     }
     @Transactional
     public boolean updateEmail(Long id,String newEmail){
-        Pattern emailPattern = Pattern.compile(emailRegex, Pattern.CASE_INSENSITIVE);
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if(!emailMatcher.find()) return false;
         Optional<EmailEntity> emailEntity = emailRepository.findById(id);
@@ -124,7 +124,7 @@ public class ProcessService {
 
     @Transactional
     public boolean updateEmail(String email,String newEmail) {
-        Pattern emailPattern = Pattern.compile(emailRegex, Pattern.CASE_INSENSITIVE);
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if (!emailMatcher.find()) return false;
         EmailEntity emailEntity = emailRepository.findByEmail(email);
@@ -182,7 +182,7 @@ public class ProcessService {
             Matcher phoneMatcher = phonePattern.matcher(text);
             text = phoneMatcher.replaceAll("");
 
-            Pattern emailPattern = Pattern.compile(emailRegex, Pattern.CASE_INSENSITIVE);
+            Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
             Matcher emailMatcher = emailPattern.matcher(text);
 
 
