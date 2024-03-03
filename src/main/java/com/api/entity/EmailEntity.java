@@ -3,29 +3,36 @@ package com.api.entity;
 
 import jakarta.persistence.*;
 
-
 @Entity
 @Table(name = "emails")
-    public class EmailEntity {
+public class EmailEntity {
 
-        @Id
-        @GeneratedValue(strategy = GenerationType.IDENTITY)
-        @Column(name = "id")
-        private Long id;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private Long id;
 
-        @Column(name = "email")
-        private String email;
+    @Column(name = "email")
+    private String email;
 
-    public EmailEntity() {
+    @ManyToOne
+    @JoinColumn(name = "type_email_id", nullable = false)
+    private EmailTypeEntity emailTypeEntity;
 
+    public EmailEntity(String email, EmailTypeEntity emailTypeEntity) {
+        this.email = email;
+        this.emailTypeEntity = emailTypeEntity;
     }
 
-    public Long getId() {
-        return id;
+    public EmailEntity() {
     }
 
     public EmailEntity(String email) {
         this.email = email;
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public void setId(Long id) {
@@ -40,5 +47,12 @@ import jakarta.persistence.*;
         this.email = email;
     }
 
+    public EmailTypeEntity getEmailTypeEntity() {
+        return emailTypeEntity;
     }
+
+    public void setEmailTypeEntity(EmailTypeEntity emailTypeEntity) {
+        this.emailTypeEntity = emailTypeEntity;
+    }
+}
 

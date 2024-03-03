@@ -1,13 +1,10 @@
 package com.api.dto;
 
-public class EmailDTO {
+public class MessageDTO {
     String text;
 
-    public EmailDTO(String text) {
+    public MessageDTO(String text) {
         this.text = text;
-    }
-
-    public EmailDTO() {
     }
 
     public String getText() {
