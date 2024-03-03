@@ -7,7 +7,6 @@ import com.api.dto.EmailDTO;
 import com.api.entity.EmailEntity;
 import com.api.entity.EmailTypeEntity;
 import jakarta.transaction.Transactional;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
