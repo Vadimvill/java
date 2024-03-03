@@ -10,6 +10,7 @@ import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -17,7 +18,7 @@ import java.util.regex.Pattern;
 @Service
 public class ProcessService {
     private final EmailRepository emailRepository;
-    private static final String EMAIL_REGEX_PATTERN = "\\b[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b";
+    private static final String EMAIL_REGEX = "\\b[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b";
     private static String adresRegex = "@([^.]*)\\.";
     private final EmailIdRepository emailIdRepository;
 
@@ -27,6 +28,59 @@ public class ProcessService {
         this.emailRepository = emailRepository;
 
         this.emailIdRepository = emailIdRepository;
+    }
+    @Transactional
+    public boolean updateDomain(Long id, String newDomain) {
+        Optional<EmailTypeEntity> emailTypeEntityOptional = emailIdRepository.findById(id);
+
+        if (emailTypeEntityOptional.isPresent() && newDomain != null && !newDomain.isEmpty() && checkDomain(newDomain)) {
+
+
+                List<EmailEntity> emails = emailTypeEntityOptional.get().getEmails();
+                Iterator<EmailEntity> iterator = emails.iterator();
+                while (iterator.hasNext()) {
+                    EmailEntity emailEntity = iterator.next();
+                    emailRepository.delete(emailEntity);
+                    iterator.remove();
+                }
+
+                emailTypeEntityOptional.get().setDomain(newDomain);
+
+                emailIdRepository.save(emailTypeEntityOptional.get());
+                return true;
+            }
+
+        return false;
+    }
+
+    @Transactional
+    public boolean updateDomain(String domain,String newDomain){
+        EmailTypeEntity emailTypeEntity = emailIdRepository.findByDomain(domain);
+
+        if (emailTypeEntity != null && newDomain != null && !newDomain.isEmpty() && checkDomain(newDomain)) {
+
+                List<EmailEntity> emails = emailTypeEntity.getEmails();
+                Iterator<EmailEntity> iterator = emails.iterator();
+                while (iterator.hasNext()) {
+                    EmailEntity emailEntity = iterator.next();
+                    emailRepository.delete(emailEntity);
+                    iterator.remove();
+                }
+
+                emailTypeEntity.setDomain(newDomain);
+
+                emailIdRepository.save(emailTypeEntity);
+                return true;
+            }
+
+        return false;
+    }
+    private boolean checkDomain(String text){
+        String reg = "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)";
+        Pattern emailPattern = Pattern.compile(reg, Pattern.CASE_INSENSITIVE);
+        Matcher emailMatcher = emailPattern.matcher(text);
+        return emailMatcher.find();
+
     }
     @Transactional
     public boolean deleteEmail(Long id) {
@@ -92,7 +146,7 @@ public class ProcessService {
     }
     @Transactional
     public boolean updateEmail(Long id,String newEmail){
-        Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if(!emailMatcher.find()) return false;
         Optional<EmailEntity> emailEntity = emailRepository.findById(id);
@@ -123,7 +177,7 @@ public class ProcessService {
 
     @Transactional
     public boolean updateEmail(String email,String newEmail) {
-        Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if (!emailMatcher.find()) return false;
         EmailEntity emailEntity = emailRepository.findByEmail(email);
@@ -174,14 +228,14 @@ public class ProcessService {
 
     @Transactional
     public String getConfidentialText(String text) {
-      
+
             List<String> list = new ArrayList<>();
             String phoneRegex = "\\b(?:\\+\\d{1,3}[-.\\s]?)?(\\d{1,4}[-.\\s]?){1,2}\\d{1,9}\\b";
             Pattern phonePattern = Pattern.compile(phoneRegex);
             Matcher phoneMatcher = phonePattern.matcher(text);
             text = phoneMatcher.replaceAll("");
 
-            Pattern emailPattern = Pattern.compile(EMAIL_REGEX_PATTERN, Pattern.CASE_INSENSITIVE);
+            Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
             Matcher emailMatcher = emailPattern.matcher(text);
 
 
@@ -218,10 +272,15 @@ public class ProcessService {
 
                 }
             }
- 
+
         return text;
 
     }
+
+
+
+
+
 
 }
 

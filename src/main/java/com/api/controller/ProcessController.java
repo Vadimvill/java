@@ -15,6 +15,9 @@ import java.util.List;
 
 @RestController
 public class ProcessController {
+    private static final String SUCCESS_MSG = "Success";
+    private static final String FAILED_MSG = "Failed";
+
     private final ProcessService service;
     public ProcessController(ProcessService service) {
         this.service = service;
@@ -27,7 +30,6 @@ public class ProcessController {
             if (dto.getText() == null) dto.setText("null");
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-          
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new EmailDTO("Error processing text"));
         }
     }
@@ -53,16 +55,30 @@ public class ProcessController {
     @PutMapping("/updateEmailById")
     public ResponseEntity<MessageDTO> updateEmailById(Long id, String newEmail) {
        if(service.updateEmail(id,newEmail)){
-           return ResponseEntity.ok(new MessageDTO("Success"));
+           return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
        }
-       else return ResponseEntity.ok(new MessageDTO("Failed"));
+       else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
+    }
+    @PutMapping("/updateDomainById")
+    public ResponseEntity<MessageDTO> updateDomainById(Long id, String newEmail) {
+        if(service.updateDomain(id,newEmail)){
+            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
+        }
+        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
+    }
+    @PutMapping("/updateDomainByName")
+    public ResponseEntity<MessageDTO> updateDomainByName(String domain, String newEmail) {
+        if(service.updateDomain(domain,newEmail)){
+            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
+        }
+        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
     }
     @PutMapping("/updateEmailByName")
     public ResponseEntity<MessageDTO> updateEmailByName(String email,String newEmail) {
         if(service.updateEmail(email,newEmail)){
-            return ResponseEntity.ok(new MessageDTO("Success"));
+            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
         }
-        else return ResponseEntity.ok(new MessageDTO("Failed"));
+        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
     }
     @DeleteMapping("/deleteEmailById")
     public ResponseEntity<MessageDTO> deleteEmailById(@RequestParam Long emailId) {
@@ -70,7 +86,6 @@ public class ProcessController {
             service.deleteEmail(emailId);
             return ResponseEntity.ok(new MessageDTO("Email deleted successfully"));
         } catch (Exception e) {
-        
             return ResponseEntity.ok(new MessageDTO("Email deleted fail"));
         }
     }
@@ -80,7 +95,6 @@ public class ProcessController {
             service.deleteDomain(domainId);
             return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
         } catch (Exception e) {
-          
             return ResponseEntity.ok(new MessageDTO("Domain deleted fail"));
         }
     }
@@ -90,7 +104,6 @@ public class ProcessController {
             service.deleteDomain(domain);
             return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
         } catch (Exception e) {
-          
             return ResponseEntity.ok(new MessageDTO("Domain deleted fail"));
         }
     }
@@ -100,7 +113,6 @@ public class ProcessController {
             service.deleteEmail(email);
             return ResponseEntity.ok(new MessageDTO("Email deleted successfully"));
         } catch (Exception e) {
-        
             return ResponseEntity.ok(new MessageDTO("Email deleted fail"));
         }
     }
