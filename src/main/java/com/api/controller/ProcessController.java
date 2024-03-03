@@ -27,7 +27,7 @@ public class ProcessController {
             if (dto.getText() == null) dto.setText("null");
             return ResponseEntity.ok(dto);
         } catch (Exception e) {
-            e.printStackTrace();
+          
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new EmailDTO("Error processing text"));
         }
     }
@@ -70,7 +70,7 @@ public class ProcessController {
             service.deleteEmail(emailId);
             return ResponseEntity.ok(new MessageDTO("Email deleted successfully"));
         } catch (Exception e) {
-            e.printStackTrace();
+        
             return ResponseEntity.ok(new MessageDTO("Email deleted fail"));
         }
     }
@@ -80,7 +80,7 @@ public class ProcessController {
             service.deleteDomain(domainId);
             return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
         } catch (Exception e) {
-            e.printStackTrace();
+          
             return ResponseEntity.ok(new MessageDTO("Domain deleted fail"));
         }
     }
@@ -90,7 +90,7 @@ public class ProcessController {
             service.deleteDomain(domain);
             return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
         } catch (Exception e) {
-            e.printStackTrace();
+          
             return ResponseEntity.ok(new MessageDTO("Domain deleted fail"));
         }
     }
@@ -100,7 +100,7 @@ public class ProcessController {
             service.deleteEmail(email);
             return ResponseEntity.ok(new MessageDTO("Email deleted successfully"));
         } catch (Exception e) {
-            e.printStackTrace();
+        
             return ResponseEntity.ok(new MessageDTO("Email deleted fail"));
         }
     }
