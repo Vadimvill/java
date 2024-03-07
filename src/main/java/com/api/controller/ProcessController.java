@@ -12,7 +12,6 @@ import java.util.Collections;
 import java.util.List;
 
 
-
 @RestController
 public class ProcessController {
     private static final String SUCCESS_MSG = "Success";
@@ -32,6 +31,11 @@ public class ProcessController {
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new EmailDTO("Error processing text"));
         }
+    }
+    @PostMapping("/addDomain")
+    public ResponseEntity<MessageDTO> addDomain(@RequestParam String text) {
+       if(service.addDomain(text)) return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
+       else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
     }
 
     @GetMapping("/getEmails")
@@ -53,15 +57,15 @@ public class ProcessController {
         }
     }
     @PutMapping("/updateEmailById")
-    public ResponseEntity<MessageDTO> updateEmailById(Long id, String newEmail) {
-       if(service.updateEmail(id,newEmail)){
+    public ResponseEntity<MessageDTO> updateEmailById(Long id, String newDomain) {
+       if(service.updateEmail(id,newDomain)){
            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
        }
        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
     }
     @PutMapping("/updateDomainById")
-    public ResponseEntity<MessageDTO> updateDomainById(Long id, String newEmail) {
-        if(service.updateDomain(id,newEmail)){
+    public ResponseEntity<MessageDTO> updateDomainById(Long id, String newDomain) {
+        if(service.updateDomain(id,newDomain)){
             return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
         }
         else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));

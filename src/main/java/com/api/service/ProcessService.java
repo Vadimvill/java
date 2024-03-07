@@ -1,11 +1,11 @@
 package com.api.service;
 
 import com.api.dao.EmailRepository;
-import com.api.dao.EmailIdRepository;
+import com.api.dao.EmailTypeRepository;
 import com.api.dto.DomainDTO;
 import com.api.dto.EmailDTO;
-import com.api.entity.EmailEntity;
-import com.api.entity.EmailTypeEntity;
+import com.api.entity.Email;
+import com.api.entity.EmailType;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -19,34 +19,34 @@ import java.util.regex.Pattern;
 public class ProcessService {
     private final EmailRepository emailRepository;
     private static final String EMAIL_REGEX = "\\b[a-z0-9._-]+@[a-z0-9.-]+\\.[a-z]{2,}\\b";
-    private static String adresRegex = "@([^.]*)\\.";
-    private final EmailIdRepository emailIdRepository;
+    private static String adresRegex = "@[a-z0-9.-]+\\.[a-z]{2,}\\b";
+    private final EmailTypeRepository emailTypeRepository;
 
 
-    public ProcessService(EmailRepository emailRepository, EmailIdRepository emailIdRepository){
+    public ProcessService(EmailRepository emailRepository, EmailTypeRepository emailTypeRepository){
 
         this.emailRepository = emailRepository;
 
-        this.emailIdRepository = emailIdRepository;
+        this.emailTypeRepository = emailTypeRepository;
     }
     @Transactional
     public boolean updateDomain(Long id, String newDomain) {
-        Optional<EmailTypeEntity> emailTypeEntityOptional = emailIdRepository.findById(id);
+        Optional<EmailType> emailTypeEntityOptional = emailTypeRepository.findById(id);
 
         if (emailTypeEntityOptional.isPresent() && newDomain != null && !newDomain.isEmpty() && checkDomain(newDomain)) {
 
-
-                List<EmailEntity> emails = emailTypeEntityOptional.get().getEmails();
-                Iterator<EmailEntity> iterator = emails.iterator();
+                List<Email> emails = emailTypeEntityOptional.get().getEmails();
+                if(!emails.isEmpty()) return false;
+                Iterator<Email> iterator = emails.iterator();
                 while (iterator.hasNext()) {
-                    EmailEntity emailEntity = iterator.next();
-                    emailRepository.delete(emailEntity);
+                    Email email = iterator.next();
+                    emailRepository.delete(email);
                     iterator.remove();
                 }
 
                 emailTypeEntityOptional.get().setDomain(newDomain);
 
-                emailIdRepository.save(emailTypeEntityOptional.get());
+                emailTypeRepository.save(emailTypeEntityOptional.get());
                 return true;
             }
 
@@ -55,41 +55,52 @@ public class ProcessService {
 
     @Transactional
     public boolean updateDomain(String domain,String newDomain){
-        EmailTypeEntity emailTypeEntity = emailIdRepository.findByDomain(domain);
+        EmailType emailType = emailTypeRepository.findByDomain(domain);
 
-        if (emailTypeEntity != null && newDomain != null && !newDomain.isEmpty() && checkDomain(newDomain)) {
+        if (emailType != null && newDomain != null && !newDomain.isEmpty() && checkDomain(newDomain)) {
 
-                List<EmailEntity> emails = emailTypeEntity.getEmails();
-                Iterator<EmailEntity> iterator = emails.iterator();
+                List<Email> emails = emailType.getEmails();
+                if(!emails.isEmpty()) return false;
+                Iterator<Email> iterator = emails.iterator();
                 while (iterator.hasNext()) {
-                    EmailEntity emailEntity = iterator.next();
-                    emailRepository.delete(emailEntity);
+                    Email email = iterator.next();
+                    emailRepository.delete(email);
                     iterator.remove();
                 }
 
-                emailTypeEntity.setDomain(newDomain);
+                emailType.setDomain(newDomain);
 
-                emailIdRepository.save(emailTypeEntity);
+                emailTypeRepository.save(emailType);
                 return true;
             }
 
         return false;
     }
     private boolean checkDomain(String text){
-        String reg = "^([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)";
+        String reg = "[a-z0-9.-]+\\.[a-z]{2,}\\b";
         Pattern emailPattern = Pattern.compile(reg, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(text);
         return emailMatcher.find();
-
+    }
+    @Transactional
+    public boolean addDomain(String domain){
+        if(checkDomain(domain)){
+            if(emailTypeRepository.findByDomain(domain) != null){
+                return false;
+            }
+            emailTypeRepository.save(new EmailType(domain));
+            return true;
+        }
+        return false;
     }
     @Transactional
     public boolean deleteEmail(Long id) {
-        Optional<EmailEntity> optionalEmail = emailRepository.findById(id);
+        Optional<Email> optionalEmail = emailRepository.findById(id);
 
         if (optionalEmail.isPresent()) {
-            EmailEntity emailEntity = optionalEmail.get();
+            Email email = optionalEmail.get();
 
-            emailRepository.delete(emailEntity);
+            emailRepository.delete(email);
             return true;
         }
         else {
@@ -98,10 +109,10 @@ public class ProcessService {
     }
 
     public boolean deleteEmail(String email) {
-        Optional<EmailEntity> optionalEmail = Optional.ofNullable(emailRepository.findByEmail(email));
+        Optional<Email> optionalEmail = Optional.ofNullable(emailRepository.findByName(email));
 
         if (optionalEmail.isPresent()) {
-            EmailEntity emailEntity = optionalEmail.get();
+            Email emailEntity = optionalEmail.get();
 
             emailRepository.delete(emailEntity);
             return true;
@@ -113,19 +124,20 @@ public class ProcessService {
     }
     @Transactional
     public List<DomainDTO> getDomains(){
-        List<EmailTypeEntity> emailTypeEntitys = emailIdRepository.findAll();
+        List<EmailType> emailTypes = emailTypeRepository.findAll();
         List<DomainDTO> result = new ArrayList<>();
-        for(int i = 0;i<emailTypeEntitys.size();i++){
-            result.add(new DomainDTO(emailTypeEntitys.get(i).getTypeEmailId()
-                    + ". " + emailTypeEntitys.get(i).getDomain()));
+        for(int i = 0; i< emailTypes.size(); i++){
+            result.add(new DomainDTO(emailTypes.get(i).getId()
+                    + ". " + emailTypes.get(i).getDomain()));
         }
         return result;
     }
     @Transactional
     public boolean deleteDomain(Long id){
-        Optional<EmailTypeEntity> emailTypeEntity = emailIdRepository.findById(id);
+        Optional<EmailType> emailTypeEntity = emailTypeRepository.findById(id);
         if(emailTypeEntity.isPresent()){
-            emailIdRepository.delete(emailTypeEntity.get());
+            if(!emailTypeEntity.get().getEmails().isEmpty()) return false;
+            emailTypeRepository.delete(emailTypeEntity.get());
             return true;
         }
         else {
@@ -134,10 +146,11 @@ public class ProcessService {
     }
     @Transactional
     public boolean deleteDomain(String name){
-        Optional<EmailTypeEntity> optionalEmailTypeEntity =  Optional.ofNullable
-                (emailIdRepository.findByDomain(name));
+        Optional<EmailType> optionalEmailTypeEntity =  Optional.ofNullable
+                (emailTypeRepository.findByDomain(name));
         if(optionalEmailTypeEntity.isPresent()) {
-            emailIdRepository.delete(emailIdRepository.findByDomain(name));
+            if(!optionalEmailTypeEntity.get().getEmails().isEmpty()) return false;
+            emailTypeRepository.delete(emailTypeRepository.findByDomain(name));
             return true;
         }
         else {
@@ -149,23 +162,23 @@ public class ProcessService {
         Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if(!emailMatcher.find()) return false;
-        Optional<EmailEntity> emailEntity = emailRepository.findById(id);
+        Optional<Email> emailEntity = emailRepository.findById(id);
         if(emailEntity.isPresent()){
             Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
             Matcher adresMatcher;
             adresMatcher = adresPattern.matcher(newEmail);
             if(adresMatcher.find()){
                 String domain = adresMatcher.group(1);
-                EmailTypeEntity emailTypeEntity = emailIdRepository.findByDomain(domain);
-                if(emailTypeEntity != null){
+                EmailType emailType = emailTypeRepository.findByDomain(domain);
+                if(emailType != null){
                     emailEntity.get().setEmail(newEmail);
-                    emailEntity.get().setEmailTypeEntity(emailTypeEntity);
+                    emailEntity.get().setEmailTypeEntity(emailType);
                 }
                 else {
-                    emailTypeEntity = new EmailTypeEntity(domain);
-                    emailIdRepository.save(emailTypeEntity);
+                    emailType = new EmailType(domain);
+                    emailTypeRepository.save(emailType);
                     emailEntity.get().setEmail(newEmail);
-                    emailEntity.get().setEmailTypeEntity(emailTypeEntity);
+                    emailEntity.get().setEmailTypeEntity(emailType);
                 }
 
             }
@@ -180,22 +193,22 @@ public class ProcessService {
         Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
         if (!emailMatcher.find()) return false;
-        EmailEntity emailEntity = emailRepository.findByEmail(email);
+        Email emailEntity = emailRepository.findByName(email);
         if (emailEntity != null) {
             Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
             Matcher adresMatcher;
             adresMatcher = adresPattern.matcher(newEmail);
             if (adresMatcher.find()) {
                 String domain = adresMatcher.group(1);
-                EmailTypeEntity emailTypeEntity = emailIdRepository.findByDomain(domain);
-                if (emailTypeEntity != null) {
+                EmailType emailType = emailTypeRepository.findByDomain(domain);
+                if (emailType != null) {
                     emailEntity.setEmail(newEmail);
-                    emailEntity.setEmailTypeEntity(emailTypeEntity);
+                    emailEntity.setEmailTypeEntity(emailType);
                 } else {
-                    emailTypeEntity = new EmailTypeEntity(domain);
-                    emailIdRepository.save(emailTypeEntity);
+                    emailType = new EmailType(domain);
+                    emailTypeRepository.save(emailType);
                     emailEntity.setEmail(newEmail);
-                    emailEntity.setEmailTypeEntity(emailTypeEntity);
+                    emailEntity.setEmailTypeEntity(emailType);
                 }
 
             }
@@ -207,14 +220,14 @@ public class ProcessService {
     @Transactional
     public List<EmailDTO> getEmails(String text){
         List<EmailDTO> strings = new ArrayList<>();
-        List<EmailEntity> emailEntities;
+        List<Email> emailEntities;
         if(text.equals("all")){
            emailEntities = emailRepository.findAll();
         }
         else {
-            EmailTypeEntity emailTypeEntity = emailIdRepository.findByDomain(text);
-            if (emailTypeEntity != null) {
-                emailEntities = emailTypeEntity.getEmails();
+            EmailType emailType = emailTypeRepository.findByDomain(text);
+            if (emailType != null) {
+                emailEntities = emailType.getEmails();
             }
             else {
                 return null;
@@ -238,7 +251,6 @@ public class ProcessService {
             Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
             Matcher emailMatcher = emailPattern.matcher(text);
 
-
             while (emailMatcher.find()) {
                 list.add(emailMatcher.group());
             }
@@ -247,41 +259,32 @@ public class ProcessService {
             Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
             Matcher adresMatcher;
 
-
             for (String email : list) {
                 adresMatcher = adresPattern.matcher(email);
 
                 if (adresMatcher.find()) {
 
                     String domain = adresMatcher.group(1);
-                    EmailTypeEntity findEntity = emailIdRepository.findByDomain(domain);
-                    if(emailRepository.findByEmail(email) != null) continue;
+                    EmailType findEntity = emailTypeRepository.findByDomain(domain);
+                    if(emailRepository.findByName(email) != null) continue;
                     if(findEntity == null){
-                        EmailTypeEntity emailTypeEntity = new EmailTypeEntity(domain);
+                        EmailType emailType = new EmailType(domain);
 
-                        emailIdRepository.save(emailTypeEntity);
+                        emailTypeRepository.save(emailType);
 
-                        EmailEntity emailEntity = new EmailEntity(email, emailTypeEntity);
+                        Email emailEntity = new Email(email, emailType);
                         emailRepository.save(emailEntity);
 
                     }
                     else {
-                        EmailEntity emailEntity = new EmailEntity(email, findEntity);
+                        Email emailEntity = new Email(email, findEntity);
                         emailRepository.save(emailEntity);
                     }
 
                 }
             }
-
         return text;
-
     }
-
-
-
-
-
-
 }
 
 
