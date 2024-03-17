@@ -17,7 +17,7 @@ public class EmailType {
     @Column(name = "domain")
     private String domain;
 
-    @OneToMany(mappedBy = "typeEmail", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "typeEmail", cascade = CascadeType.PERSIST)
     private List<Email> emails;
 
     public EmailType(String domain) {
