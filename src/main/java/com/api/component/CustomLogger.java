@@ -5,24 +5,25 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class CustomLogger {
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(CustomLogger.class);
-    public CustomLogger(){
-         logger.info("logger is create");
-    }
-    public void logError(String text){
-        logger.error(text);
-    }
-    public void logCachePut(String text){
-        logger.info("Cache put : {}", text);
+    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(CustomLogger.class);
+
+    public CustomLogger() {
+        LOGGER.info("logger is create");
     }
 
-    public void logInfo(String text){
-        logger.info("{}", text);
+    public void logError(String text) {
+        LOGGER.error(text);
     }
 
-    public void logCacheRemove(String text){
-        logger.info("Cache remove : {}", text);
+    public void logCachePut(String text) {
+        LOGGER.info("Cache put : {}", text);
     }
 
+    public void logInfo(String text) {
+        LOGGER.info("{}", text);
+    }
 
+    public void logCacheRemove(String text) {
+        LOGGER.info("Cache remove : {}", text);
+    }
 }

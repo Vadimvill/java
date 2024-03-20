@@ -7,6 +7,7 @@ import com.api.service.EmailTypeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.Collections;
 import java.util.List;
 
@@ -14,18 +15,20 @@ import java.util.List;
 public class EmailTypeController {
     private final CustomLogger logger;
     private static final String SUCCESS_MSG = "Success";
-    private static final String FAILED_MSG = "Failed";
     private final EmailTypeService service;
+
     public EmailTypeController(CustomLogger logger, EmailTypeService service) {
         this.logger = logger;
         this.service = service;
     }
+
     @PostMapping("/addDomain")
     public ResponseEntity<MessageDTO> addDomain(@RequestParam String text) {
         logger.logInfo("POST : addDomain");
-        if(service.addDomain(text)) return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
-        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
+        service.addDomain(text);
+        return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
     }
+
     @GetMapping("/getDomains")
     public ResponseEntity<List<DomainDTO>> getDomains() {
         logger.logInfo("GET : getDomain");
@@ -36,32 +39,32 @@ public class EmailTypeController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Collections.emptyList());
         }
     }
+
     @PutMapping("/updateDomainById")
     public ResponseEntity<MessageDTO> updateDomainById(@RequestParam Long id, String newDomain) {
         logger.logInfo("PUT : updateDomainById");
-        if(service.updateDomain(id,newDomain)){
-            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
-        }
-        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
+        service.updateDomain(id, newDomain);
+        return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
     }
+
     @PutMapping("/updateDomainByName")
     public ResponseEntity<MessageDTO> updateDomainByName(@RequestParam String domain, String newEmail) {
         logger.logInfo("PUT : updateDomainByName");
-        if(service.updateDomain(domain,newEmail)){
-            return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
-        }
-        else return ResponseEntity.ok(new MessageDTO(FAILED_MSG));
+        service.updateDomain(domain, newEmail);
+        return ResponseEntity.ok(new MessageDTO(SUCCESS_MSG));
     }
+
     @DeleteMapping("/deleteDomainById")
     public ResponseEntity<MessageDTO> deleteDomainById(@RequestParam Long domainId) {
-            logger.logInfo("DELETE : deleteDomainById");
-            service.deleteDomain(domainId);
-            return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
+        logger.logInfo("DELETE : deleteDomainById");
+        service.deleteDomain(domainId);
+        return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
     }
+
     @DeleteMapping("/deleteDomainByName")
     public ResponseEntity<MessageDTO> deleteDomainByName(@RequestParam String domain) {
-            logger.logInfo("DELETE : deleteDomainByName");
-            service.deleteDomain(domain);
-            return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
+        logger.logInfo("DELETE : deleteDomainByName");
+        service.deleteDomain(domain);
+        return ResponseEntity.ok(new MessageDTO("Domain deleted successfully"));
     }
 }

@@ -1,15 +1,17 @@
 package com.api.exceptions;
 
 import com.api.component.CustomLogger;
-import org.springframework.http.ResponseEntity;
+import jakarta.validation.ConstraintViolationException;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.HttpServerErrorException;
+import org.springframework.web.servlet.NoHandlerFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -19,34 +21,34 @@ public class GlobalExceptionHandler {
         this.customLogger = customLogger;
     }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidationException(MethodArgumentNotValidException ex) {
-        customLogger.logError(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Validation error occurred");
-    }
-    @ExceptionHandler(MissingServletRequestParameterException.class)
-    public ResponseEntity<String> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
-        String paramName = ex.getParameterName();
-        customLogger.logError(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Parameter '" + paramName + "' is missing");
-    }
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<String> handleClientError(HttpClientErrorException ex) {
-        customLogger.logError(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Client error occurred");
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @ExceptionHandler(RuntimeException.class)
+    public com.api.exceptions.ErrorResponse handleInternalServerError(RuntimeException ex) {
+        customLogger.logError("error, 500 code");
+        return new com.api.exceptions.ErrorResponse(ex.getMessage());
     }
 
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler({HttpClientErrorException.class, HttpMessageNotReadableException.class,
+            MethodArgumentNotValidException.class, MissingServletRequestParameterException.class,
+            ConstraintViolationException.class})
+    public com.api.exceptions.ErrorResponse handleBadRequestException(Exception ex) {
+        customLogger.logError("error, 400 code");
+        return new com.api.exceptions.ErrorResponse("400 error, BAD REQUEST");
+    }
+
+    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    public ResponseEntity<String> handleMethodNotAllowed(HttpRequestMethodNotSupportedException ex) {
-        // Обработка ошибки 405 (Method Not Allowed)
-        customLogger.logError(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body("Method Not Allowed");
+    public com.api.exceptions.ErrorResponse handleMethodNotAllowed(Exception ex) {
+        customLogger.logError("error, 405 code");
+        return new com.api.exceptions.ErrorResponse("405 error, METHOD NOT ALLOWED");
     }
 
-    @ExceptionHandler(HttpServerErrorException.class)
-    public ResponseEntity<String> handleServerError(HttpServerErrorException ex) {
-        // Обработка ошибки 500 (Internal Server Error)
-        customLogger.logError(ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Server error occurred");
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(NoHandlerFoundException.class)
+    public com.api.exceptions.ErrorResponse handlerFoundException(Exception ex) {
+        customLogger.logError("error, 404 code");
+        return new com.api.exceptions.ErrorResponse("404 error, NOT FOUND");
     }
 }
+

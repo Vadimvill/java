@@ -8,20 +8,20 @@ import org.springframework.stereotype.Component;
 @Aspect
 @Component
 public class LoggingAspect {
-    private static final Logger logger = LoggerFactory.getLogger(LoggingAspect.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(LoggingAspect.class);
 
     @Before("execution(* com.api.service.*.*(..)) || execution(* com.api.controller.*.*(..))")
     public void logBeforeMethodExecution() {
-        logger.info("Method is about to execute");
+        LOGGER.info("Method is about to execute");
     }
 
     @AfterReturning(pointcut = "execution(* com.api.service.*.*(..)) || execution(* com.api.controller.*.*(..))", returning = "result")
     public void logAfterMethodExecution(Object result) {
-        logger.info("Method execution completed with result: {}", result);
+        LOGGER.info("Method execution completed with result: {}", result);
     }
 
     @AfterThrowing(pointcut = "execution(* com.api.service.*.*(..)) || execution(* com.api.controller.*.*(..))", throwing = "exception")
     public void logAfterMethodThrowing(Exception exception) {
-        logger.error("Exception occurred during method execution: {}", exception.getMessage());
+        LOGGER.error("Exception occurred during method execution: {}", exception.getMessage());
     }
 }

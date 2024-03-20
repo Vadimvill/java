@@ -1,4 +1,5 @@
 package com.api.dao;
+
 import com.api.entity.Email;
 import com.api.entity.EmailType;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -12,8 +13,7 @@ import java.util.List;
 public interface EmailRepository extends JpaRepository<Email, Long> {
     Email findByName(String email);
 
-
-    @Query("SELECT e FROM Email e WHERE e.typeEmail.domain = :domain")
+    @Query(value = "SELECT e FROM Email e WHERE e.typeEmail.domain = :domain")
     List<Email> findByEmailTypeDomain(@Param("domain") String domain);
 
     List<Email> findByTypeEmail(EmailType emailType);

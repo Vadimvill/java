@@ -7,6 +7,7 @@ import com.api.dao.EmailTypeRepository;
 import com.api.dto.EmailDTO;
 import com.api.entity.Email;
 import com.api.entity.EmailType;
+import com.api.exceptions.ServiceException;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 @Service
 public class EmailService {
     private final CustomLogger customLogger;
@@ -24,17 +26,15 @@ public class EmailService {
     private static String adresRegex = "[a-z0-9.-]+\\.[a-z]{2,}\\b";
     private final EmailTypeRepository emailTypeRepository;
 
-
-    public EmailService(CustomLogger customLogger, EmailRepository emailRepository, Cache cache, EmailTypeRepository emailTypeRepository){
+    public EmailService(CustomLogger customLogger, EmailRepository emailRepository, Cache cache, EmailTypeRepository emailTypeRepository) {
         this.customLogger = customLogger;
-
         this.emailRepository = emailRepository;
         this.cache = cache;
         this.emailTypeRepository = emailTypeRepository;
     }
 
     @Transactional
-    public boolean deleteEmail(Long id) {
+    public void deleteEmail(Long id) {
         Optional<Email> optionalEmail = emailRepository.findById(id);
 
         if (optionalEmail.isPresent()) {
@@ -45,24 +45,21 @@ public class EmailService {
             customLogger.logCacheRemove(optionalEmail.get().getEmail());
             // Удаление электронной почты из репозитория
             emailRepository.delete(email);
-
-            return true; // Электронная почта была найдена и успешно удалена
         } else {
             customLogger.logError("Email is not found");
-            return false; // Электронная почта с заданным идентификатором не была найдена
+            throw new ServiceException();
         }
     }
 
     @Transactional
-    public boolean deleteEmail(String email) {
+    public void deleteEmail(String email) {
         Optional<Email> optionalEmail;
-        if(cache.get(email) != null){
-            optionalEmail = (Optional<Email>)cache.get(email);
+        if (cache.get(email) != null) {
+            optionalEmail = (Optional<Email>) cache.get(email);
             customLogger.logInfo("Value from cache");
+        } else {
+            optionalEmail = Optional.ofNullable(emailRepository.findByName(email));
         }
-        else optionalEmail = Optional.ofNullable(emailRepository.findByName(email));
-
-
         if (optionalEmail.isPresent()) {
             Email emailEntity = optionalEmail.get();
 
@@ -72,58 +69,54 @@ public class EmailService {
             // Удаляем электронную почту из репозитория
             emailRepository.delete(emailEntity);
 
-            return true; // Электронная почта была найдена и успешно удалена
         } else {
             customLogger.logError("Email is not found");
-            return false; // Электронная почта не найдена
+            throw new ServiceException();
         }
     }
 
     @Transactional
-    public boolean updateEmail(Long id,String newEmail){
+    public void updateEmail(Long id, String newEmail) {
         Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
-        if(!emailMatcher.find()){
+        if (!emailMatcher.find()) {
             customLogger.logError("Is not domain");
-            return false;
+            throw new ServiceException();
         }
 
         Optional<Email> emailEntity = emailRepository.findById(id);
-        if(emailEntity.isPresent()){
+        if (emailEntity.isPresent()) {
             Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
             Matcher adresMatcher;
             adresMatcher = adresPattern.matcher(newEmail);
-            if(adresMatcher.find()){
-                String domain = adresMatcher.group(1);
+            if (adresMatcher.find()) {
+                String domain = adresMatcher.group(0);
                 EmailType emailType = emailTypeRepository.findByDomain(domain);
-                if(emailType != null){
+                if (emailType != null) {
                     cache.remove(emailEntity.get().getEmail());
-                    cache.put(newEmail,new Email(newEmail));
+                    cache.put(newEmail, new Email(newEmail));
                     emailEntity.get().setEmail(newEmail);
                     emailEntity.get().setEmailTypeEntity(emailType);
-                }
-                else {
+                } else {
                     emailType = new EmailType(domain);
                     emailTypeRepository.save(emailType);
                     emailEntity.get().setEmail(newEmail);
                     emailEntity.get().setEmailTypeEntity(emailType);
-                    cache.put(emailType.getDomain(),emailType);
+                    cache.put(emailType.getDomain(), emailType);
                 }
-
             }
-            return true;
-
+        } else {
+            throw new ServiceException();
         }
-        return false;
     }
 
     @Transactional
-    public boolean updateEmail(String email,String newEmail) {
+    public void updateEmail(String email, String newEmail) {
         Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
         Matcher emailMatcher = emailPattern.matcher(newEmail);
-        if(!emailMatcher.find()){
+        if (!emailMatcher.find()) {
             customLogger.logError("Is not domain");
-            return false;
+            throw new ServiceException();
         }
         Email emailEntity = emailRepository.findByName(email);
         if (emailEntity != null) {
@@ -131,11 +124,11 @@ public class EmailService {
             Matcher adresMatcher;
             adresMatcher = adresPattern.matcher(newEmail);
             if (adresMatcher.find()) {
-                String domain = adresMatcher.group(1);
+                String domain = adresMatcher.group(0);
                 EmailType emailType = emailTypeRepository.findByDomain(domain);
                 if (emailType != null) {
                     cache.remove(emailEntity.getEmail());
-                    cache.put(newEmail,new Email(newEmail));
+                    cache.put(newEmail, new Email(newEmail));
                     emailEntity.setEmail(newEmail);
                     emailEntity.setEmailTypeEntity(emailType);
                     customLogger.logCachePut(emailType.getDomain());
@@ -145,48 +138,46 @@ public class EmailService {
                     emailTypeRepository.save(emailType);
                     emailEntity.setEmail(newEmail);
                     emailEntity.setEmailTypeEntity(emailType);
-                    cache.put(emailType.getDomain(),emailType);
-                    cache.put(emailEntity.getEmail(),emailEntity);
+                    cache.put(emailType.getDomain(), emailType);
+                    cache.put(emailEntity.getEmail(), emailEntity);
                     customLogger.logCachePut(emailType.getDomain());
                     customLogger.logCachePut(emailEntity.getEmail());
                 }
-
-
             }
-            return true;
-
+        } else {
+            throw new ServiceException();
         }
-        return false;
     }
+
     @Transactional
-    public List<EmailDTO> getEmails(String text){
+    public List<EmailDTO> getEmails(String text) {
         List<EmailDTO> strings = new ArrayList<>();
         List<Email> emailEntities;
-        if(text.equals("all")){
+        if (text.equals("all")) {
 
-           emailEntities = emailRepository.findAll();
-            for(int i = 0;i<emailEntities.size();i++){
+            emailEntities = emailRepository.findAll();
+            for (int i = 0; i < emailEntities.size(); i++) {
                 customLogger.logCachePut(emailEntities.get(i).getEmail());
-                cache.put(emailEntities.get(i).getEmail(),emailEntities.get(i));
+                cache.put(emailEntities.get(i).getEmail(), emailEntities.get(i));
                 strings.add(new EmailDTO(emailEntities.get(i).getId().toString() + ". " + emailEntities.get(i).getEmail()));
             }
+        } else {
+            customLogger.logError("Wrong arguments");
+            throw new ServiceException();
         }
-        else{
-        customLogger.logError("Wrong arguments");
-            }
         return strings;
     }
 
     @Transactional
-    public List<EmailDTO> getEmailsByEmailType(String text){
+    public List<EmailDTO> getEmailsByEmailType(String text) {
         List<EmailDTO> strings = new ArrayList<>();
         List<Email> emailEntities;
-            emailEntities = emailRepository.findByEmailTypeDomain(text);
-            for(int i = 0;i<emailEntities.size();i++){
-                cache.put(emailEntities.get(i).getEmail(),emailEntities.get(i));
-                customLogger.logCachePut(emailEntities.get(i).getEmail());
-                strings.add(new EmailDTO(emailEntities.get(i).getId().toString() + ". " + emailEntities.get(i).getEmail()));
-            }
+        emailEntities = emailRepository.findByEmailTypeDomain(text);
+        for (int i = 0; i < emailEntities.size(); i++) {
+            cache.put(emailEntities.get(i).getEmail(), emailEntities.get(i));
+            customLogger.logCachePut(emailEntities.get(i).getEmail());
+            strings.add(new EmailDTO(emailEntities.get(i).getId().toString() + ". " + emailEntities.get(i).getEmail()));
+        }
 
         return strings;
     }
@@ -194,53 +185,54 @@ public class EmailService {
     @Transactional
     public String getConfidentialText(String text) {
 
-            List<String> list = new ArrayList<>();
-            String phoneRegex = "\\b(?:\\+\\d{1,3}[-.\\s]?)?(\\d{1,4}[-.\\s]?){1,2}\\d{1,9}\\b";
-            Pattern phonePattern = Pattern.compile(phoneRegex);
-            Matcher phoneMatcher = phonePattern.matcher(text);
-            text = phoneMatcher.replaceAll("");
+        List<String> list = new ArrayList<>();
+        String phoneRegex = "\\b(?:\\+\\d{1,3}[-.\\s]?)?(\\d{1,4}[-.\\s]?){1,2}\\d{1,9}\\b";
+        Pattern phonePattern = Pattern.compile(phoneRegex);
+        Matcher phoneMatcher = phonePattern.matcher(text);
+        text = phoneMatcher.replaceAll("");
 
-            Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
-            Matcher emailMatcher = emailPattern.matcher(text);
+        Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
+        Matcher emailMatcher = emailPattern.matcher(text);
 
-            while (emailMatcher.find()) {
-                list.add(emailMatcher.group());
-            }
-            text = emailMatcher.replaceAll("");
+        while (emailMatcher.find()) {
+            list.add(emailMatcher.group());
+        }
+        text = emailMatcher.replaceAll("");
 
-            Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
-            Matcher adresMatcher;
+        Pattern adresPattern = Pattern.compile(adresRegex, Pattern.CASE_INSENSITIVE);
+        Matcher adresMatcher;
 
-            for (String email : list) {
-                adresMatcher = adresPattern.matcher(email);
+        for (String email : list) {
+            adresMatcher = adresPattern.matcher(email);
 
-                if (adresMatcher.find()) {
+            if (adresMatcher.find()) {
 
-                    String domain = adresMatcher.group();
-                    EmailType findEntity = emailTypeRepository.findByDomain(domain);
-                    if(emailRepository.findByName(email) != null) continue;
-                    if(findEntity == null){
-                        EmailType emailType = new EmailType(domain);
-
-                        emailTypeRepository.save(emailType);
-
-                        Email emailEntity = new Email(email, emailType);
-                        emailRepository.save(emailEntity);
-                        cache.put(emailEntity.getEmail(),emailEntity);
-                        cache.put(emailType.getDomain(),emailType);
-                        customLogger.logCachePut(emailEntity.getEmail());
-                        customLogger.logCachePut(emailType.getDomain());
-
-                    }
-                    else {
-                        Email emailEntity = new Email(email, findEntity);
-                        emailRepository.save(emailEntity);
-                        cache.put(emailEntity.getEmail(),emailEntity);
-                        customLogger.logCachePut(emailEntity.getEmail());
-                    }
-
+                String domain = adresMatcher.group();
+                EmailType findEntity = emailTypeRepository.findByDomain(domain);
+                if (emailRepository.findByName(email) != null) {
+                    continue;
                 }
+                if (findEntity == null) {
+                    EmailType emailType = new EmailType(domain);
+
+                    emailTypeRepository.save(emailType);
+
+                    Email emailEntity = new Email(email, emailType);
+                    emailRepository.save(emailEntity);
+                    cache.put(emailEntity.getEmail(), emailEntity);
+                    cache.put(emailType.getDomain(), emailType);
+                    customLogger.logCachePut(emailEntity.getEmail());
+                    customLogger.logCachePut(emailType.getDomain());
+
+                } else {
+                    Email emailEntity = new Email(email, findEntity);
+                    emailRepository.save(emailEntity);
+                    cache.put(emailEntity.getEmail(), emailEntity);
+                    customLogger.logCachePut(emailEntity.getEmail());
+                }
+
             }
+        }
         return text;
     }
 }

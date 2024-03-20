@@ -4,11 +4,9 @@ import jakarta.persistence.*;
 
 import java.util.List;
 
-
 @Entity
 @Table(name = "email_type")
 public class EmailType {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
