@@ -5,14 +5,12 @@ import com.api.component.CustomLogger;
 import com.api.dao.EmailRepository;
 import com.api.dao.EmailTypeRepository;
 import com.api.dto.DomainDTO;
+import com.api.entity.Email;
 import com.api.entity.EmailType;
 import com.api.exceptions.ServiceException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.AdditionalAnswers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +38,39 @@ class EmailTypeServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    void testUpdateDomainNotEmpty() {
+        EmailType emailType = new EmailType();
+        List<Email> list = new ArrayList<Email>();
+        list.add(new Email("ewqeqe@mail.ru"));
+        emailType.setEmails(list);
+        Optional<EmailType> emailTypeEntityOptional = Optional.of(new EmailType("mail.com"));
+        emailTypeEntityOptional.get().setEmails(list);
+
+
+        emailType.setDomain("mail.com");
+
+        when(emailTypeRepository.findByDomain("mail.com")).thenReturn(emailType);
+        when(emailTypeRepository.findById(1L)).thenReturn(emailTypeEntityOptional);
+        assertThrows(ServiceException.class, () ->  emailTypeService.updateDomain(1L,"qwer.ru"));
+        assertThrows(ServiceException.class, () ->  emailTypeService.updateDomain("mail.com","qwer.ru"));
+
+    }
+    @Test
+    void testUpdateNotIsEmpty() {
+        EmailType emailType = new EmailType();
+        List<Email> list = new ArrayList<Email>();
+        emailType.setEmails(list);
+        Optional<EmailType> emailTypeEntityOptional = Optional.of(new EmailType("mail.com"));
+        emailTypeEntityOptional.get().setEmails(list);
+
+
+        emailType.setDomain("mail.com");
+
+        when(emailTypeRepository.findByDomain("mail.com")).thenReturn(emailType);
+        when(emailTypeRepository.findById(1L)).thenReturn(emailTypeEntityOptional);
     }
 
     @Test
