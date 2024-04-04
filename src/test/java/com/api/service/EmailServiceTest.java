@@ -76,6 +76,8 @@ class EmailServiceTest {
         emailDTOList = emailService.getEmailsByEmailType("mail.ru");
         Assertions.assertNotNull(emailDTOList);
         assertEquals(2,emailDTOList.size());
+        emailDTOList.get(1).setText("weq@mail.com");
+        assertEquals("weq@mail.com",emailDTOList.get(1).getText());
     }
 
     @Test

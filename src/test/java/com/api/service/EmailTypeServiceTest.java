@@ -5,6 +5,7 @@ import com.api.component.CustomLogger;
 import com.api.dao.EmailRepository;
 import com.api.dao.EmailTypeRepository;
 import com.api.dto.DomainDTO;
+import com.api.dto.MessageDTO;
 import com.api.entity.Email;
 import com.api.entity.EmailType;
 import com.api.exceptions.ServiceException;
@@ -105,6 +106,10 @@ class EmailTypeServiceTest {
         // Mock data
         String domain = "example.com";
 
+        DomainDTO domainDTO = new DomainDTO("ex.com");
+        domainDTO.setText("example.com");
+        MessageDTO messageDTO = new MessageDTO("ex.com");
+        messageDTO.setText("example.com");
         // Mock cache behavior
         when(cache.get(domain)).thenReturn(null);
         // Mock repository behavior
@@ -112,7 +117,8 @@ class EmailTypeServiceTest {
 
         // Invoke method
         emailTypeService.addDomain(domain);
-
+        assertEquals("example.com",domainDTO.getText());
+        assertEquals("example.com",messageDTO.getText());
         // Verify interactions and assertions
         verify(cache).get(domain);
         verify(emailTypeRepository).findByDomain(domain);
