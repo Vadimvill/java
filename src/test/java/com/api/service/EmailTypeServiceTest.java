@@ -5,6 +5,7 @@ import com.api.component.CustomLogger;
 import com.api.dao.EmailRepository;
 import com.api.dao.EmailTypeRepository;
 import com.api.dto.DomainDTO;
+import com.api.dto.EmailDTO;
 import com.api.dto.MessageDTO;
 import com.api.entity.Email;
 import com.api.entity.EmailType;
@@ -105,7 +106,7 @@ class EmailTypeServiceTest {
     void testAddDomain_ValidDomain_Success() {
         // Mock data
         String domain = "example.com";
-
+        EmailDTO emailDTO = new EmailDTO();
         DomainDTO domainDTO = new DomainDTO("ex.com");
         domainDTO.setText("example.com");
         MessageDTO messageDTO = new MessageDTO("ex.com");
