@@ -15,7 +15,7 @@
 	<description>api</description>
 	<properties>
 		
-       <sonar.organization>Vadimvill</sonar.organization>
+       <sonar.organization>vadimvill</sonar.organization>
        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
 		<java.version>17</java.version>
