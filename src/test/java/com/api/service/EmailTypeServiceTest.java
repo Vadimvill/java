@@ -5,16 +5,14 @@ import com.api.component.CustomLogger;
 import com.api.dao.EmailRepository;
 import com.api.dao.EmailTypeRepository;
 import com.api.dto.DomainDTO;
-import com.api.entity.Email;
 import com.api.entity.EmailType;
 import com.api.exceptions.ServiceException;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.AdditionalAnswers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.configuration.injection.MockInjection;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,11 +38,12 @@ class EmailTypeServiceTest {
     EmailRepository emailRepository;
 
     @BeforeEach
-    void setUp(){
+    void setUp() {
         MockitoAnnotations.initMocks(this);
     }
+
     @Test
-    public void testDeleteDomain_ByValidIdAndEmptyEmails_Success() {
+    void testDeleteDomain_ByValidIdAndEmptyEmails_Success() {
         // Mock data
         Long id = 1L;
         EmailType emailTypeEntity = new EmailType("example.com");
@@ -64,7 +63,7 @@ class EmailTypeServiceTest {
     }
 
     @Test
-    public void testDeleteDomain_ByValidNameAndEmptyEmails_Success() {
+    void testDeleteDomain_ByValidNameAndEmptyEmails_Success() {
         // Mock data
         String domain = "example.com";
         EmailType emailTypeEntity = new EmailType(domain);
@@ -82,10 +81,10 @@ class EmailTypeServiceTest {
         verify(cache).remove(emailTypeEntity.getDomain());
         verify(customLogger).logCacheRemove(emailTypeEntity.getDomain());
 
-}
+    }
 
     @Test
-    public void testAddDomain_ValidDomain_Success() {
+    void testAddDomain_ValidDomain_Success() {
         // Mock data
         String domain = "example.com";
 
@@ -105,7 +104,7 @@ class EmailTypeServiceTest {
     }
 
     @Test
-    public void testAddDomain_DuplicateDomain_ThrowsServiceException() {
+    void testAddDomain_DuplicateDomain_ThrowsServiceException() {
         // Mock data
         String domain = "example.com";
 
@@ -124,7 +123,7 @@ class EmailTypeServiceTest {
     }
 
     @Test
-    public void testAddDomain_InvalidDomain_ThrowsServiceException() {
+    void testAddDomain_InvalidDomain_ThrowsServiceException() {
         // Mock data
         String domain = "invalid_domain";
 
@@ -137,11 +136,11 @@ class EmailTypeServiceTest {
     }
 
     @Test
-    public void testGetDomains_Success() {
+    void testGetDomains_Success() {
         // Mock data
         List<EmailType> emailTypes = new ArrayList<>();
-        emailTypes.add(new EmailType( "example1.com"));
-        emailTypes.add(new EmailType( "example2.com"));
+        emailTypes.add(new EmailType("example1.com"));
+        emailTypes.add(new EmailType("example2.com"));
 
         // Mock repository behavior
         when(emailTypeRepository.findAll()).thenReturn(emailTypes);
@@ -157,11 +156,16 @@ class EmailTypeServiceTest {
             verify(customLogger).logCachePut(emailType.getDomain());
         }
     }
-    public void testUpdateDomain_ById_Success() {
+
+    @Test
+    void testUpdateDomain_ById_Success() {
         // Mock data
         Long id = 1L;
         String newDomain = "newexample.com";
-        EmailType emailTypeEntity = new EmailType( "example.com");
+        EmailType emailTypeEntity = new EmailType(id, "example.com");
+
+        // Set emails list to empty to avoid NullPointerException
+        emailTypeEntity.setEmails(new ArrayList<>());
 
         // Mock repository behavior
         when(emailTypeRepository.findById(id)).thenReturn(Optional.of(emailTypeEntity));
@@ -177,19 +181,23 @@ class EmailTypeServiceTest {
     }
 
     @Test
-    public void testUpdateDomain_ByDomain_Success() {
+    void testUpdateDomain_WithValidDomainAndNewDomain_Success() {
         // Mock data
         String domain = "example.com";
         String newDomain = "newexample.com";
-        EmailType emailTypeEntity = new EmailType(domain);
+        EmailType emailType = new EmailType(domain);
 
         // Mock repository behavior
-        when(emailTypeRepository.findByDomain(domain)).thenReturn(emailTypeEntity);
+        when(emailTypeRepository.findByDomain(domain)).thenReturn(emailType);
+        when(emailTypeRepository.save(any())).then(AdditionalAnswers.returnsFirstArg());
 
         // Invoke method
-        assertThrows(NullPointerException.class, () ->  emailTypeService.updateDomain(domain, newDomain));
+        emailTypeService.updateDomain(domain, newDomain);
 
         // Verify interactions and assertions
         verify(emailTypeRepository).findByDomain(domain);
+        verify(emailTypeRepository).save(emailType);
+        verify(cache).remove(domain);
+        verify(cache).put(newDomain, emailType);
     }
 }
