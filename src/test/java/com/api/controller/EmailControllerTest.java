@@ -120,14 +120,14 @@ class EmailControllerTest {
     @Test
     void testAdd() {
         // Arrange
-        List<String> emails = Arrays.asList("email1@example.com", "email2@example.com");
+        List<EmailDTO> emails = Arrays.asList(new EmailDTO("email1@example.com"), new EmailDTO("email1@example.com"));
 
         // Act
-        ResponseEntity<String> response = controller.add(emails);
+        ResponseEntity<MessageDTO> response = controller.add(emails);
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals("Emails received successfully", response.getBody());
+        assertEquals("all ok", response.getBody().getText());
         verify(service).addEmails(emails);
     }
 

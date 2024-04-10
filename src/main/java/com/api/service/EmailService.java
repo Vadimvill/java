@@ -34,27 +34,28 @@ public class EmailService {
     }
 
     @Transactional
-    public void addEmails(List<String> list) {
+    public void addEmails(List<EmailDTO> list) {
             list.stream()
                     .forEach(this::putEmail);
     }
 
     @Transactional
-    protected void putEmail(String email) {
+    protected void putEmail(EmailDTO emailDTO) {
         Pattern emailPattern = Pattern.compile(EMAIL_REGEX, Pattern.CASE_INSENSITIVE);
-        Matcher emailMatcher = emailPattern.matcher(email);
+        Matcher emailMatcher = emailPattern.matcher(emailDTO.getText());
         if (!emailMatcher.find()) {
             throw new ServiceException();
         } else {
-            Email existingEmail = emailRepository.findByName(email);
+            Email existingEmail = emailRepository.findByName(emailDTO.getText());
             if (existingEmail == null) {
                 Email newEmail = new Email();
-                newEmail.setEmail(email);
-                EmailType emailType = createOrRetrieveEmailType(email);
+                newEmail.setEmail(emailDTO.getText());
+                EmailType emailType = createOrRetrieveEmailType(emailDTO.getText());
                 newEmail.setEmailTypeEntity(emailType);
                 emailRepository.save(newEmail);
             } else {
-                customLogger.logInfo("Email " + email + " already exists in the database");
+                customLogger.logInfo("Email " + emailDTO.getText() + " already exists in the database");
+                throw new ServiceException();
             }
         }
     }

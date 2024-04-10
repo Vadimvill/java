@@ -176,12 +176,12 @@ class EmailServiceTest {
     }
     @Test
     void testPutEmail() {
-        String email = "test@example.com";
-        when(emailRepository.findByName(email)).thenReturn(null);
+        EmailDTO email = new EmailDTO("test@example.com");
+        when(emailRepository.findByName(email.getText())).thenReturn(null);
 
         emailService.putEmail(email);
 
-        verify(emailRepository).findByName(email);
+        verify(emailRepository).findByName(email.getText());
         verify(emailRepository).save(any(Email.class));
     }
 
