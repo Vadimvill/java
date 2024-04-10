@@ -4,6 +4,7 @@ import com.api.component.CustomLogger;
 import com.api.dto.DomainDTO;
 import com.api.dto.MessageDTO;
 import com.api.service.EmailTypeService;
+import com.api.service.RequestCounterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -23,6 +24,8 @@ class EmailTypeControllerTest {
 
     @Mock
     private CustomLogger logger;
+    @Mock
+    RequestCounterService requestCounterService;
 
     @Mock
     private EmailTypeService service;
